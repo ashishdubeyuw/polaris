@@ -8,9 +8,12 @@ usage() {
 
 is_safe_target() {
   local target_dir="$1"
+  local resolved_target=""
   [[ -n "$target_dir" ]] || return 1
 
-  case "$target_dir" in
+  resolved_target="$(realpath -m -- "$target_dir" 2>/dev/null || printf '%s' "$target_dir")"
+
+  case "$resolved_target" in
     "/"|"/bin"|"/boot"|"/dev"|"/etc"|"/home"|"/lib"|"/lib64"|"/opt"|"/proc"|"/root"|"/run"|"/sbin"|"/srv"|"/sys"|"/tmp"|"/usr"|"/var"|"."|"..")
       return 1
       ;;
@@ -25,7 +28,9 @@ verify_clone() {
   [[ -d "$target_dir" ]] || return 1
   git -C "$target_dir" rev-parse --is-inside-work-tree >/dev/null 2>&1 || return 1
   git -C "$target_dir" rev-parse HEAD >/dev/null 2>&1 || return 1
+  git -C "$target_dir" rev-list --count HEAD >/dev/null 2>&1 || return 1
   git -C "$target_dir" status --porcelain >/dev/null 2>&1 || return 1
+  return 0
 }
 
 if [[ $# -lt 2 || $# -gt 4 ]]; then
